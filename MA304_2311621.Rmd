@@ -1,0 +1,602 @@
+---
+title: "MA304-_-__ : Exploratory Data Analysis and Data Visualisation"
+output:
+  html_document: default
+  pdf_document: default
+date: "Submitted By : 2311621_Haris Fayyaz"
+---
+
+# Introduction:
+
+Within our assignment we have 2 datasets the crime23 and the temp2023 datasets for Colchester:
+
+The crime23.csv dataset contains detailed information about street-level crime incidents. It includes variables such as category, persistent_id, date, latitude, longitude, street_id, street_name, context, id, location_type, location_subtype, and outcome_status. For a comprehensive understanding of these variables, we can refer to the dataset description provided in the interface: https://ukpolice.njtierney.com/reference/ukp_crime.html.
+
+On the other hand, the temp2023.csv dataset comprises daily climate data captured from a weather station in proximity to Colchester. It includes variables such as station_ID, Date, TemperatureCAvg, TemperatureCMax, TemperatureCMin, TdAvgC, HrAvg, WindkmhDir, WindkmhInt, WindkmhGust, PresslevHp, Precmm, TotClOct, lowClOct, SunD1h, VisKm, PreselevHp, and SnowDepcm. We can find a detailed description of these variables and the extraction interface at https://bczernecki.github.io/climate/reference/meteo_ogimet.html.
+
+Throughout this analysis, we will explore the relationships between crime incidents and climatic conditions, uncover patterns, and derive valuable insights to aid decision-making processes.
+
+```{r,eval=TRUE}
+library(ggplot2) 
+library(plotly)
+library(dplyr)
+```
+
+### Importing our crime dataset
+
+```{r,eval=TRUE}
+crime<-read.csv("crime23.csv")
+head(crime)
+```
+
+### PLotting the distribution of crime categories
+
+```{r,eval=TRUE}
+#Creating a categorical plot
+category_plot <- ggplot(crime, aes(x = reorder(category, -table(category)[category]), fill = category)) +
+  geom_bar(color = "black", size = 0.5) + 
+  scale_fill_brewer(palette = "Set3") +
+  labs(x = "Category of Crime", y = "Frequency", title = "Distribution of Crime Categories") +
+  theme_bw() +  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title = element_text(size = 12),  # Adjusting the size of the axis
+        plot.title = element_text(size = 16, face = "bold"))  # Adjusting the plot size
+
+#Converting our ggplot into plotly
+category_plot_interactive <- ggplotly(category_plot)
+category_plot_interactive
+```
+
+From this graph we can now interpret the distribution of different crime categories through their frequencies (number of times it occurred). Thus, from the above graph we can interpret that violent-crime has the highest number of crimes, followed by anti-social behavior, followed by criminal damage arson, followed by shoplifting, then public order, then over theft vehicle, then bicycle theft, then burglary, then drugs, then robbery, then the other crimes, then the theft from the person, ending till the possession of weapons. Helping us gain an insight into the number of violent crimes and the least number of possession of weapons crime in Colchester.
+
+
+### Plotting the outcome status of the crimes :
+
+```{r,eval=TRUE}
+library(ggplot2)
+# Customize the bar plot of outcome status with different colors for each bar and a legend
+outcome_status_plot <- ggplot(crime, aes(x = outcome_status, fill = outcome_status)) +
+  geom_bar(color = "black", size = 0.5) +  # Add black outline to bars
+  labs(x = "Outcome Status", y = "Frequency", title = "Outcome Status of Crimes") +
+  theme_bw() +  # Change theme to black and white
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title = element_text(size = 12),  # Adjust axis title size
+        plot.title = element_text(size = 16, face = "bold")) +  # Adjust plot title size
+  scale_fill_manual(values = rainbow(length(unique(crime$outcome_status)))) +  # Use rainbow colors
+  guides(fill = guide_legend(title = "Outcome Status"))  # Add legend
+outcome_status_plot_interactive <- ggplotly(outcome_status_plot)
+outcome_status_plot_interactive
+```
+
+From the above graph we will now interpret the sights gained from the outcomes that we received from the crimes, helping us gain the insight that the highest number of outcomes resulted in "Investigation complete; no suspect identified", followed by the outcome "Unable to prosecute suspect". Concluding the outcome, "Suspect charged as part of another case" was the least number of outcome, as this outcome only came once. In between these maximum and the least number of outcomes there were several other outcomes, such as "Action to be taken by another organization", "Awaiting court outcome","Court result unavailable","Formal action is not in the public interest","Further action is not in the public interest","Further investigation is not in the public interest","Local resolution","Offender given a caution","Status update unavailable" and "Under investigation".
+
+
+```{r,eval=TRUE}
+table(crime$outcome_status)
+```
+### Plotting crime by the location type:
+
+```{r,eval=TRUE}
+location_type_plot <- ggplot(crime, aes(x = reorder(location_type, -table(location_type)[location_type]), fill = location_type)) +
+  geom_bar(color = "black", alpha = 0.8, width = 0.7) +  
+  scale_fill_brewer(palette = "Dark2") +  
+  labs(x = "Location Type", y = "Number of Crimes", title = "Crimes by Location Type") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10, color = "black"),  
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.title = element_text(size = 12, color = "black"),
+        plot.title = element_text(hjust = 0.5, size = 18, color = "black"),
+        legend.position = "right",  # Move legend to the right side
+        legend.title = element_text(size = 12, color = "black"),
+        legend.text = element_text(size = 10, color = "black"),
+        panel.grid.major = element_blank(), 
+        panel.border = element_blank(),  
+        panel.background = element_rect(fill = "lightgray", color = "black")) +  
+  theme(plot.title = element_text(hjust = 0.5)) 
+location_type_plot_interactive <- ggplotly(location_type_plot)
+location_type_plot_interactive
+```
+
+From the above graph we can interpret the most of the location type being "Force" the general law enforcement locations , rather than the "BTP" which represents the locations under the jurisdiction of the British Transport Police. Thus through understanding of these factors can better help more better resource allocation and strategic planning helping more crime prevention.
+
+
+### Plotting a two way table for Category and Location Type: 
+
+```{r,eval=TRUE}
+# Creating a two-way table for 'category' and 'location_type'
+two_way_table <- table(crime$category, crime$location_type)
+two_way_table
+```
+
+This two-way table illustrates the distribution of crime categories between the British Transport Police (BTP) and normal police force locations (Force). Across the various categories, it is evident that Force predominantly handles the majority of reported incidents, with anti-social behaviour, criminal damage/arson, and violent crime being particularly noteworthy, accounting for 677, 580, and 2625 incidents, respectively. In contrast, BTP records comparatively fewer incidents, with notable exceptions including bicycle theft (4 incidents) and vehicle crime (1 incident). This distribution suggests a distinct pattern in the types of incidents reported to each policing entity, highlighting the differing roles and responsibilities between BTP and Force in addressing specific types of criminal activity.
+
+```{r,eval=TRUE}
+# Convert the two-way table into a data frame
+two_way_df <- as.data.frame(two_way_table)
+names(two_way_df) <- c("Category", "BTP", "Force")
+
+#Melting for better plotting
+melted_df <- reshape2::melt(two_way_df, id.vars = "Category")
+grouped_bar_plot_interactive <- plot_ly(melted_df, x = ~Category, y = ~value, color = ~variable, type = "bar") %>%
+  layout(title = "Frequency of Crime Categories by Location Type",
+         xaxis = list(title = "Category of Crime"),
+         yaxis = list(title = "Frequency"),
+         barmode = "group")
+grouped_bar_plot_interactive
+
+```
+
+From the above diagram we now analyze different crime categories along different location types. We analyze an approximate similar "Force" type for every category. However, we analyze the highest "BTP" location in public order and violent crime. However, the least "BTP" could be observed in the drugs category.
+
+### Plotting the top crime streets :
+
+```{r,eval=TRUE}
+library(dplyr)
+library(ggplot2) 
+library(plotly)
+# Filter the dataset to include only the top 10 streets
+top_10_streets <- crime %>%
+  group_by(street_name) %>%
+  summarise(total_crimes = n()) %>%
+  arrange(desc(total_crimes)) %>%
+  top_n(10)
+
+crime_top_10 <- crime %>%
+  filter(street_name %in% top_10_streets$street_name)
+
+#Analyzing crime for top 10 streets
+crime_type_analysis_top_10 <- ggplot(crime_top_10, aes(x = street_name, fill = category)) +
+  geom_bar(position = "stack") +
+  labs(x = "Street Name", y = "Number of Crimes", title = "Crime Type Analysis for Top 10 Streets") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+        legend.position = "bottom",  # Change legend position to bottom
+        legend.key.size = unit(0.1, "mm"))  # Adjust legend key size
+
+# Converting our ggplot plot into plotly 
+crime_type_analysis_top_10_interactive <- ggplotly(crime_type_analysis_top_10)
+crime_type_analysis_top_10_interactive
+```
+
+From this above graph we plot the top 10 streets of Colchester. From the above interpretation, we observe the street name" ""on or near" having the highest number of crimes and among, the anti-social behavior crime is observed at the highest number of crimes, violent crime is observed at the least number.Moreover, our top 10 street list category, we can observe the street name "on or near George Street" having the least number of crimes. However, yet again, even in this street, we can observe anti-social behavior having the highest number of crimes and violent crime being the least number. In-between these streets we had some other major streets as well, such as "on or near Balkerne Gardens", "on or near Church Street", "on or near Cowdray Avenue", "on or near Nighclubs", "on or near Oarking Area","on or near Shopping Area", "on or near St Nicholas Street" and the "on or near Supermarket". 
+
+
+### Converting the crime data date into a date format :
+
+```{r,eval=TRUE}
+# Assuming your dates are stored as character strings in a column named "date"
+crime$date <- paste0("1-", crime$date)
+
+# Convert the "date" column to Date format
+crime$date <- as.Date(crime$date, format = "%d-%Y-%m")
+
+```
+### Calculating the total number of crimes of monthly basis :
+
+```{r,eval=TRUE}
+crime$date <- as.Date(crime$date)
+
+crime$month <- format(crime$date, "%Y-%m")
+
+# Grouping by month and counting the number of occurrences
+monthly_crime <- crime %>%
+  group_by(month) %>%
+  summarise(total_crimes = n())
+
+# Printing the first few rows of monthly crime
+head(monthly_crime)
+
+```
+
+### Monthly crime count overtime :
+
+```{r,eval=TRUE}
+
+# Converting month into a date format
+monthly_crime$month <- as.Date(paste0(monthly_crime$month, "-01"))
+
+# Plotting a line plot of monthly crime counts over time
+monthly_crime_plot <- ggplot(monthly_crime, aes(x = month, y = total_crimes)) +
+  geom_line(color = "skyblue", size = 1) +  
+  labs(x = "Month", y = "Total Crimes", title = "Monthly Crime Counts Over Time") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),  
+        panel.grid.major = element_line(color = "gray", linetype = "dotted"), 
+        panel.grid.minor = element_blank())  
+
+# Converting ggplot object into plotly
+interactive_monthly_crime_plot <- ggplotly(monthly_crime_plot)
+interactive_monthly_crime_plot
+```
+
+From the above graph we can interpret the highest number of crimes in January. After that significant we have observed a significant fall in February, then a rise in crime was observed till May, then an uncertain fall in the crime rate was observed till August. However, right after August, a significant rise was observed till September. And a fall is to be observed from then till the end of the year in the crime rates in Colchester.
+
+
+### Encoding Categorical Variables into Dummy Variables in Crime Dataset :
+
+```{r,eval=TRUE}
+crime_encoded <- model.matrix(~ 0 + category, data = crime)
+crime_encoded <- as.data.frame(crime_encoded)
+```
+
+### Computing the correlation matrix for all the crime categories
+```{r,eval=TRUE}
+# Computing the correlation matrix
+correlation_matrix_crime <- cor(crime_encoded)
+
+# Creating a heatmap of the correlation matrix
+heatmap_plot <- ggplot(data = reshape2::melt(correlation_matrix_crime)) +
+  geom_tile(aes(Var2, Var1, fill = value)) +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0,
+                       limits = c(-1,1), name="Correlation",
+                       breaks=seq(-1, 1, by=0.2)) +
+  theme_minimal() +
+  labs(title = "Correlation Heatmap of Crime Categories") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "right") +
+  geom_text(aes(Var2, Var1, label = round(value, 2)), color = "black")
+heatmap_plot
+```
+Keeping in mind the correlation matrix criteria of 1 being a strong correlation, the range between 0.5-0.75  being a moderate correlation, a correlation between 0.3-0.5 being a weak correlation and a correlation below 0.3 be a very weak correlation.
+From the above correlation matrix plot we observe almost all the categories having a negative correlation with that of the other categorical crime variables. As we can observe, the highest negative correlation between violent crime and social behavior. Such that if violent crime increases the anti-social behavior, crime decreases. Followed by the second strongest correlation between violent crime and shoplifting . However, the least negative and strongest correlation could be observed between violent crime and vehicle crimes. Indicating that if violent crime increases, vehicle crime decreases but at a lower level.
+
+### Scatter plot in between the longitude and the Latitude
+```{r,eval=TRUE}
+ggplot(data = crime, aes(x = lat, y = long)) +
+  geom_point() +
+  labs(x = "Latitude", y = "Longitude", title = "Crime Locations")
+```
+In this scatter plot we analyze where we are to observe the crimes utilizing the latitude and the longitude coordinates. Helping us analyze that at the coordinates around 51.880-51.89 latitude to 0.89-0.91 longitude, most number of crimes are observed. Thus giving valuable insights for the police to increase their security within such coordinates, helping increase the security system and helping in the prevention of crimes in Colchester.​
+
+
+### Plotting a Leaflet / Map for Colchester:
+```{r,eval=TRUE}
+library("dplyr")
+library("leaflet")
+crime_map <- leaflet(data = crime) %>%
+  addTiles() %>%
+  addCircleMarkers(lng = ~long, lat = ~lat,
+                   radius = 5, fillOpacity = 0.7, color = "red", stroke = FALSE) %>%
+  setView(lng = mean(crime$long), lat = mean(crime$lat), zoom = 10)
+
+crime_map
+```
+
+Now plotting those coordinates on the leaflet / a map. Helping us give an insight of the exact location where a majority of the crimes are happening in Colchester giving the police a major insight , rather a representation of where to deploy the major police force helping them control and limit crimes within Colchester.
+
+
+### Crime Count across different Seasons :
+
+```{r, eval=TRUE}
+
+library("ggplot2")
+library("plotly")
+
+#Extract month from date
+crime$month <- as.integer(format(as.Date(crime$date), "%m"))
+# Breaking our months into seasons
+get_season <- function(month) {
+  if (month %in% c(3, 4, 5)) {
+    return("Spring")
+  } else if (month %in% c(6, 7, 8)) {
+    return("Summer")
+  } else if (month %in% c(9, 10, 11)) {
+    return("Autumn")
+  } else {
+    return("Winter")
+  }
+}
+
+# Creating a for season column
+crime$season <- sapply(crime$month, get_season)
+# Define  colors to each season
+season_colors <- c("Spring" = "#FFA07A", "Summer" = "#FF6347", "Autumn" = "#FF4500", "Winter" = "#4682B4")
+# Plotting a Bar plot of crimes by season 
+crime_by_season <- ggplot(crime, aes(x = season, fill = season)) +
+  geom_bar() +  # Use fill aesthetic for custom colors
+  labs(x = "Season", y = "Number of Crimes", title = "Number of Crimes by Season") +
+  scale_fill_manual(values = season_colors) +  # Use custom colors
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+    panel.grid.major.y = element_line(color = "gray", size = 0.2),
+    panel.grid.minor = element_blank(),  
+    axis.line = element_line(color = "black"),  
+    axis.title = element_text(size = 12, face = "bold"),  
+    axis.text = element_text(size = 10)  
+  )
+# Coverting ggplot object into plotly object
+crime_by_season_interactive <- ggplotly(crime_by_season)
+crime_by_season_interactive
+```
+
+Here we have first divided our data set into several seasons, in order to analyze in which season we are expected to interpret more crimes, thus helping the residents of Colchester be more prepared for crimes in that specific season as compared to other seasons.
+From the above graph we can observe that autumn has the highest number of crimes, followed by the spring, then the summer and, finally, the least number of crimes can be observed in winter.
+
+### Variation in crime counts across different seasons
+```{r, eval=TRUE}
+# Breaking our months into seasons
+get_season <- function(month) {
+  if (month %in% c(3, 4, 5)) {
+    return("Spring")
+  } else if (month %in% c(6, 7, 8)) {
+    return("Summer")
+  } else if (month %in% c(9, 10, 11)) {
+    return("Autumn")
+  } else {
+    return("Winter")
+  }
+}
+
+crime_heatmap_season <- crime %>%
+  group_by(season, category) %>%
+  summarise(crime_count = n())
+
+# Now creating a  heatmap plot 
+heatmap_plot_season <- ggplot(crime_heatmap_season, aes(x = season, y = category, fill = crime_count)) +
+  geom_tile(color = "white") +  # Add white border to tiles
+  scale_fill_gradient(low = "lightblue", high = "darkblue", name = "Crime Count") +  # Adjust color gradient
+  labs(x = "Season", y = "Crime Type", title = "Variation in Crime Counts Across Seasons and Crime Types") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 8),  # Adjust text size for y-axis
+        axis.title = element_text(size = 12),  # Adjust title size
+        legend.position = "right",  # Move legend to the right
+        legend.title = element_text(size = 10),  # Adjust legend title size
+        plot.title = element_text(hjust = 0.5, size = 16, face = "bold"))  # Adjust title properties
+heatmap_plot_season
+
+```
+From the above graph we can interpret a similar trend in the crimes throughout every season, with the violent crimes being the highest for every season. However, more anti-social behavior crimes are observed in the autumn and the summers as compared to the spring and the winters. Moreover, more of crime damage arson crime is observed within the autumn and the spring. More public order crime is also observed in the autumn and the spring as compared to summer and winter. Other than that a similar trend is observed in all the crime categories for all the seasons.
+
+## Now Plotting for Temperature data
+
+```{r,eval=TRUE}
+temp_data<-read.csv("temp2023.csv")
+```
+
+### Removing columns Sea level pressure and  Depth of snow cover because of it having null values
+
+```{r,eval=TRUE}
+temp <- temp_data[, !(names(temp_data) %in% c("PreselevHp", "SnowDepcm"))]
+#Converting into date format
+temp$Date <- as.Date(temp$Date)
+head(temp)
+```
+
+### Converting Daily data into monthly data :
+
+```{r,eval=TRUE}
+#installing lubridate package
+
+if (!requireNamespace("lubridate", quietly = TRUE)) {
+  install.packages("lubridate")
+}
+
+library(lubridate)
+
+# Converting the date column into a date format
+temp$Date <- as.Date(temp$Date, format="%Y-%m-%d")
+
+# Extracting the month from the Date column
+temp$Month <- month(temp$Date, label = TRUE, abbr = FALSE)
+
+# Grouping the temperature data on monthly 
+monthly_data <- temp %>%
+  group_by(Month) %>%
+  summarise(
+    AvgTemp = mean(TemperatureCAvg, na.rm = TRUE),
+    MaxTemp = mean(TemperatureCMax, na.rm = TRUE),
+    MinTemp = mean(TemperatureCMin, na.rm = TRUE),
+    .groups = 'drop'
+  )
+
+# View the resulting monthly data
+print(monthly_data)
+
+```
+Here we successfully converted our daily date set into monthly.
+
+### Temperature Range Distribution :
+
+```{r}
+library(plotly)
+
+# Calculating the frequency of each temperature range
+temp_freq <- table(cut(temp$TemperatureCAvg, breaks = 5))
+temp_df <- data.frame(Temperature_Range = names(temp_freq), Frequency = temp_freq)
+
+# Creating a the pie chart 
+plot_ly(data = temp_df, labels = ~Temperature_Range, values = ~Frequency.Freq, type = "pie") %>%
+  layout(title = "Temperature Range Distribution")
+```
+
+
+From the above graph, we can observe a division of our average temperature ranges into 5 slices, indicating that we have the highest range of temperature at between 7.68-12.8, followed by the temperature range between 12.18-18, followed by 2.54-7.68, followed by 18-23.1 and lastly the least proportion the temperature range between -2.63-2.54.
+
+
+### Density plot :
+
+
+```{r}
+density_plot_avgtemp<-ggplot(temp, aes(x = TemperatureCAvg)) +
+  geom_density(fill = "skyblue", color = "black") +
+  labs(x = "Average Temperature (C)", y = "Density", title = "Density Plot of Average Temperature")
+density_plot_avgtemp
+```
+
+From the above density plot curve have the average temperature on the x-axis while its density on the y-axis. Helping us interpret that around 10 degree Celsius is the most frequent, indicating that on most days the temperature has been around 10 degree Celsius within Colchester, while the least occurrence of temperature has been 25 degree Celsius within Colchester.
+
+
+### Temperature Distribution :
+
+```{r}
+temperature_distribution_violin <- ggplot(temp, aes(x = "", y = TemperatureCAvg)) +
+  geom_violin(fill = "skyblue") +
+  labs(x = "", y = "Average Temperature (C)", title = "Temperature Distribution")
+
+temperature_distribution_violin
+```
+
+From the above violin graph we can interpret the maximum distribution of our dataset around 7.5-10, in the middle of the average temperature dataset for Colchester. However, as we go into the two extremes of the temperature. We can observe less and less distribution of the dataset on the graph.
+
+### Distribution of Wind Direction :
+
+```{r, eval=TRUE}
+# Calculating the frequency of each wind direction
+wind_direction_counts <- table(temp$WindkmhDir)
+wind_direction_df <- as.data.frame(wind_direction_counts)
+names(wind_direction_df) <- c("Wind Direction", "Frequency")
+
+# Creating a pie chart
+pie_chart <- ggplot(wind_direction_df, aes(x = "", y = Frequency, fill = `Wind Direction`)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y") +  
+  labs(fill = "Wind Direction", title = "Distribution of Wind Directions") + 
+  theme_minimal()  
+pie_chart
+```
+From the above diagram we can observe the maximum wind direction moving towards WSW(58 times), then SW(49 times), then SSW(41 times). We observe the least amount of wind direction going towards the SE with only 6 times going towards this direction.
+
+```{r}
+table(temp$WindkmhDir)
+```
+
+### Plotting correlation between Wind Speed and Wind Gust : 
+
+```{r}
+correlation_plot <- ggplot(temp, aes(x = WindkmhInt, y = WindkmhGust)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(x = "Wind Speed (km/h) - Int", y = "Wind Speed (km/h) - Gust", title = "Correlation between Wind Speed (Int) and Wind Speed (Gust)")
+
+correlation_plot
+```
+From the above plot we can observe some major insights from the correlation scatter plot in between the wind speed and the wind gust. Concluding to have a linear relationship in between. Moreover, we also conclude that as one of the variables increases, the other is also expected to increase. Thus, also from a central linear straight line, we confirm its linear relationship. And from all the scattered plots near and around our linear line.
+
+
+### Boxplot of Precipatation Distribution by Temperature Range :
+
+```{r,eval=TRUE}
+# Plotting a Box plot of Precmm by temperature category
+temperature_precipitation_boxplot <- ggplot(temp, aes(x = cut(TemperatureCAvg, breaks = 5), y = Precmm, fill = cut(TemperatureCAvg, breaks = 5))) +
+  geom_boxplot(color = "black") +
+  scale_fill_brewer(palette = "Set3", name = "Temperature Range") +  
+  labs(x = "Temperature Range", y = "Precipitation (mm)", title = "Precipitation Distribution by Temperature Range") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Converting the ggplot object into an interactive plotly 
+interactive_temperature_precipitation_boxplot <- ggplotly(temperature_precipitation_boxplot)
+interactive_temperature_precipitation_boxplot
+```
+
+From the above graph we observe outliers in all of our dataset. We can observe the highest points of the precipitation dataset within the range 12.8-18. However, if we go in extreme weather such as -2.63 and 23.1. We observe little precipitation at such points. Moreover, we can also observe that as the weather rises, more frozen water is observed in the atmosphere that falls back on the earth.
+
+### Creating a time series plot for our temperature dataset :
+
+```{r}
+# Creating a time series plot of temperature
+temperature_plot <- ggplot(temp, aes(x = Date)) +
+  geom_line(aes(y = TemperatureCAvg, color = "Average Temperature")) +
+  geom_line(aes(y = TemperatureCMax, color = "Maximum Temperature")) +
+  geom_line(aes(y = TemperatureCMin, color = "Minimum Temperature")) +
+  labs(x = "Date", y = "Temperature (C)", color = "Temperature") +
+  ggtitle("Temperature Over Time") +
+  theme_minimal()
+# Converting the ggplot object to an interactive Plot
+interactive_temperature_plot <- ggplotly(temperature_plot)
+interactive_temperature_plot
+```
+
+
+From the above graph we can observe our temperature in degrees celsius on the y-axis and the date on our x-axis. Moreover, by plotting three lines such that the red representing the "Average Temperature", the green representing the "Maximum Temperature" and the blue representing the "Minimum Temperature". We can gain insight that the average temperature tends to have a higher temperature within the summer months (around July 2023), while having lower temperatures in the winter months (around January for both 2023 and 2024). Moreover, we can also observe that the maximum temperature follows the same trend as the average temperature but at a more extreme extent such that, for example, in July 2023, the maximum temperature is higher than that of the average temperature. And lastly, we can observe a similar trend for the minimum temperature following a similar trend to the average temperature but at a lower level such that there is a more significant drop in the minimum temperature for the month of January for both the years 2023 and 2024 in comparison to the average temperature.
+
+
+### Distribution of Temperature Over Time :
+
+
+```{r}
+distribution_temperature <- ggplot(temp, aes(x = Date, y = TemperatureCAvg)) +
+  geom_smooth(color = "skyblue", fill = "lightblue", method = "loess") +
+  labs(x = "Date", y = "Average Temperature (C)", title = "Distribution of Temperature Over Time") +
+  theme_minimal()
+interactive_distribution_temperature <- ggplotly(distribution_temperature)
+interactive_distribution_temperature
+
+```
+
+
+From the graph above we can observe, we can observe the "date" on the x-axis and the "Average Temperature" on the y-axis. We are now smoothing our graph are gaining a peak maximum average temperature at 17.8 around August 2023. However, due to smoothing, we are also able to create a cushion. And we are able to create a predictive estimate of a max 18.39 upper while a lower predictive estimate of 17.19.
+
+
+# Now Merging the data set Temperature and Crime:
+
+```{r}
+temp_d <- read.csv("temp2023.csv")
+crime_d <- read.csv("crime23.csv")
+
+#Converting temperature data into a date format: 
+temp_d$date <- as.Date(temp_d$Date)
+
+# Converting temperature data as "YYYY-MM" format :
+temp_d$date <- format(temp_d$date, "%Y-%m")
+
+#Merging both the files of crime and temperature :
+
+combined_d <- merge(crime_d, temp_d, by = "date")
+
+head(combined_d)
+
+```
+
+### Getting Columns for our combined dataset
+
+```{r}
+colnames(combined_d)
+```
+
+### Plotting average humidity for the top 10 streets :
+```{r}
+# Calculating average humidity
+avg_humidity <- combined_d %>%
+  group_by(street_name) %>%
+  summarise(avg_humidity = mean(HrAvg, na.rm = TRUE)) %>%
+  arrange(desc(avg_humidity))
+
+ggplot_object <- ggplot(avg_humidity[1:10, ], aes(x = reorder(street_name, avg_humidity), y = avg_humidity)) +
+  geom_bar(stat = "identity", fill = "#4CAF50", color = "black", alpha = 0.8) +  
+  labs(x = "Street Name", y = "Average Humidity (%)", title = "Average Humidity for Top 10 Streets") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10, color = "black"),  
+        axis.text.y = element_text(size = 10, color = "black"),  
+        axis.title = element_text(size = 12, color = "black"),  
+        plot.title = element_text(hjust = 0.5, size = 16, color = "black"),  
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank(),  
+        panel.border = element_blank(),  
+        legend.position = "none")  
+
+plotly_object <- ggplotly(ggplot_object)
+plotly_object
+```
+In this graph we tried to calculate the average humidity for the top street names in Colchester. We can interpret the highest average humidity on the street "on or near Ireton Road" at 88.9, while the lower humidity on the street "on or near Colne Bank Avenue" is at 87.19. In between, we may have street names "on or near Highfield","on or near Norwich Close","on or near St Augustine Mews","on or near Brookside","on or near Carlisle","on or near Charles Street","on or near Bristol Road", and "on or near Christ Church Court".
+
+# Conclusion
+
+In summary, the analysis of Colchester's policing dataset for 2023, alongside daily climate data, offers valuable insights into crime patterns and their potential correlations with weather conditions. By examining, we observed several major insights, such as violent crime being at its highest peak throughout the years in Colchester. Moreover, we also observed the highest number of outcomes resulting in "Investigation complete; no suspect identified". Concluding that the highest number of criminals had never been punished. Indicating that a majority of criminals easily get away with their crimes. Motivating the criminals for more crime. We also observed the highest number of crimes in the month of January of each month, and were also able to highlight streets and times when major crime happens again, highlighting for the police to be more vigilant and help in the prevention of more crimes in Colchester. However, if we dive in to our temperature dataset, we conclude a similar trend in the average temperature trends between the maximum and the minimum temperature. Giving us an insight into lower temperatures in summers and higher temperatures in winters. Moreover, we also conclude a linear correlation between the wind speed and the wind gust, concluding that if one increases, the other also increases.
+
+
+# References
+
+1) https://ukpolice.njtierney.com/reference/ukp_crime.html
+2) https://bczernecki.github.io/climate/reference/meteo_ogimet.html
+3) https://www.rdocumentation.org/packages/ggplot2/versions/3.5.0
+4) https://www.rdocumentation.org/packages/plotly/versions/4.10.4
